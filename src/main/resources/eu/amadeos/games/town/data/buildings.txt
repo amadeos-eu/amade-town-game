@@ -1,0 +1,104 @@
+# What the town can build besides roads, power lines and zones. Money in dollars, power in MW.
+#
+#   tool     the button of the panel: power, water, services or park
+#   work     what it does: plant (coal), wind, pump, tower (water), school, library, clinic, fire, hall, park
+#   size     width and height in tiles
+#   cost     what it costs to build
+#   upkeep   what it costs a month
+#   power    the power a plant makes; for every other building, the power it uses
+#   water    the water a pump gives
+#   reach    how far it serves, in tiles; for a building that makes smoke, how far the smoke carries
+#   smoke    the pollution it makes on its own tiles
+#   shore    yes if it must stand next to water
+#   one      yes if a town has one at most
+
+building coal
+  tool power
+  work plant
+  size 3 3
+  cost 3000
+  upkeep 60
+  power 120
+  reach 9
+  smoke 55
+
+building wind
+  tool power
+  work wind
+  size 1 1
+  cost 500
+  upkeep 6
+  power 12
+
+building pump
+  tool water
+  work pump
+  size 2 2
+  cost 400
+  upkeep 10
+  power 4
+  water 140
+  shore yes
+
+building tower
+  tool water
+  work tower
+  size 1 1
+  cost 600
+  upkeep 8
+  power 2
+  reach 10
+
+building school
+  tool services
+  work school
+  size 3 2
+  cost 1200
+  upkeep 40
+  power 4
+  reach 12
+
+building library
+  tool services
+  work library
+  size 2 2
+  cost 900
+  upkeep 25
+  power 3
+  reach 12
+
+building clinic
+  tool services
+  work clinic
+  size 2 2
+  cost 1500
+  upkeep 40
+  power 4
+  reach 12
+
+building fire
+  tool services
+  work fire
+  size 2 2
+  cost 1000
+  upkeep 35
+  power 3
+  reach 14
+
+building hall
+  tool services
+  work hall
+  size 3 3
+  cost 2000
+  upkeep 30
+  power 4
+  reach 14
+  one yes
+
+building park
+  tool park
+  work park
+  size 1 1
+  cost 80
+  upkeep 1
+  reach 4

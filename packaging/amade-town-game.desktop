@@ -1,0 +1,24 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=amadeOS Town
+Name[de]=amadeOS Town
+Name[fr]=amadeOS Town
+Name[es]=amadeOS Town
+Name[it]=amadeOS Town
+GenericName=City Builder
+GenericName[de]=Städtebauspiel
+GenericName[fr]=Jeu de construction de ville
+GenericName[es]=Juego de construir ciudades
+GenericName[it]=Gioco di costruzione di città
+Comment=Lay roads, zone land, bring power and water, and watch a town grow in three missions
+Comment[de]=Legen Sie Straßen, weisen Sie Land aus, bringen Sie Strom und Wasser und sehen Sie in drei Missionen eine Stadt wachsen
+Comment[fr]=Tracez des rues, délimitez des zones, amenez l’électricité et l’eau, et voyez grandir une ville en trois missions
+Comment[es]=Trace calles, defina zonas, lleve electricidad y agua y vea crecer una ciudad en tres misiones
+Comment[it]=Traccia strade, assegna zone, porta corrente e acqua e guarda crescere una città in tre missioni
+Icon=amade-town-game
+Exec=/usr/bin/amade-town-game
+Terminal=false
+Categories=Game;StrategyGame;Simulation;
+Keywords=city;town;zoning;roads;power;water;simulation;isometric;game;
+StartupNotify=true
