@@ -1,0 +1,82 @@
+# How the computer builds a town, on the title screen and in the tests: one step every few seconds, as a
+# player would with the mouse. A step the town cannot pay for waits until the money is there.
+#
+#   mission  the mission whose map it builds on
+#   every    seconds between two steps
+#   do       road, line or bulldoze col row col row: along the columns first, then the rows
+#            zone r|c|i col row col row: the rectangle between two corners
+#            build building col row: with its top left corner on that tile
+#            wait: a step of doing nothing
+
+plan computer
+  mission 1
+  every 1.5
+  # The main street from the highway, the side streets, the cross streets.
+  do road 8 30 33 30
+  do road 14 19 14 44
+  do road 19 19 19 44
+  do road 24 19 24 44
+  do road 29 19 29 40
+  do road 14 20 29 20
+  do road 14 25 29 25
+  do road 8 35 29 35
+  do road 8 40 29 40
+  do road 8 30 8 45
+  # Power: a coal plant in the south west, lines along the side streets.
+  do build coal 4 36
+  do line 7 37 8 37
+  do line 14 21 14 44
+  do line 19 21 19 44
+  do line 24 21 24 44
+  # The first homes, workshops and shops.
+  do zone i 9 36 13 39
+  do zone i 9 41 13 44
+  do zone r 15 26 18 29
+  do zone r 20 26 23 29
+  do zone c 15 31 18 34
+  do zone i 15 36 18 39
+  do build tower 22 24
+  do zone r 25 26 28 29
+  do zone r 15 21 18 24
+  do zone r 20 21 23 24
+  # Water from the river.
+  do line 29 21 29 34
+  do line 30 27 45 27
+  do build pump 46 26
+  do zone c 20 31 23 34
+  do build park 20 21
+  do build school 25 21
+  do zone r 25 23 28 24
+  do zone i 15 41 18 44
+  do build tower 22 37
+  do zone c 25 31 28 34
+  do build fire 20 36
+  do zone r 20 38 23 39
+  do zone r 25 36 28 39
+  do build library 20 41
+  do zone r 22 41 23 44
+  do build park 15 28
+  do zone r 25 41 28 44
+  do build clinic 30 31
+  do build park 25 29
+  do build hall 30 21
+  # More power from the wind, and room to grow.
+  do build wind 9 45
+  do build wind 10 45
+  do build wind 11 45
+  do build pump 46 28
+  do zone r 15 36 18 39
+  do zone c 15 45 23 45
+  do road 30 35 33 35
+  do zone r 30 36 33 39
+  do line 29 35 29 37
+  do build park 30 33
+  # More wind for the offices that a grown town wants.
+  do build wind 12 45
+  do build wind 13 45
+  do build wind 14 45
+  do build wind 9 46
+  do build wind 10 46
+  do build pump 47 24
+  do build coal 4 39
+  do wait

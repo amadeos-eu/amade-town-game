@@ -1,0 +1,31 @@
+# What each mission gives the town and what it asks of it.
+#
+#   map        the map in the folder maps, a text file of one letter per tile (see the README)
+#   money      the money at the start, in dollars
+#   goal       how many people the town must have to win
+#   happiness  how happy they must be at the same time, in percent (any if not given)
+#   years      the goal must be reached before this many years are over (no limit if not given)
+#   fire       yes if houses catch fire
+#   forbid     buildings the town may not build in this mission
+
+mission 1
+  map map1.txt
+  money 20000
+  goal 1000
+
+mission 2
+  map map2.txt
+  money 16000
+  goal 2500
+  happiness 60
+  years 15
+  fire yes
+
+mission 3
+  map map3.txt
+  money 15000
+  goal 3000
+  happiness 65
+  years 18
+  fire yes
+  forbid coal
