@@ -12,6 +12,7 @@ import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Arc2D;
+import java.awt.geom.Area;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
@@ -220,6 +221,11 @@ final class Art {
         Point2D sA = at(p, x0 - ov, y1 + ov, eave), sB = at(p, x1 + ov, y1 + ov, eave);
         g.setColor(col(shade(roofC, 1.25)));
         g.fill(poly(nA, nB, rB, rA));
+        // The chimney stands on the far slope, its foot in the roof: drawn before the near slope, which hides
+        // the part below the ridge, and again above the ridge after the ridge's line.
+        double cx = x0 + len * 0.72, cy = ym - 2.2, foot = top - (ym - cy) / (ym - y0 + ov) * (top - eave) - 0.3;
+        Draw chimney = c -> box(c, p, cx, cy, cx + 2, cy + 2, foot, top + 2, 0x2A1E18, 0xA8583E, 0x7A3A26);
+        chimney.draw(g);
         Path2D near = poly(rA, rB, sB, sA);
         g.setPaint(new GradientPaint((float) rA.getX(), (float) rA.getY(), col(shade(roofC, 1.05)), (float) sA.getX(),
                 (float) sA.getY(), col(shade(roofC, 0.78))));
@@ -240,11 +246,14 @@ final class Art {
             }
         }
         g.setClip(clip);
-        double cx = x0 + len * 0.72, cy = ym - 1.6;
-        box(g, p, cx, cy, cx + 2, cy + 2, top - 2.4, top + 1.6, 0x2A1E18, 0xA8583E, 0x7A3A26);
         g.setColor(col(shade(roofC, 0.5)));
         g.setStroke(new BasicStroke(0.8f));
         g.draw(new Line2D.Double(rA, rB));
+        Area above = new Area(chimneyBounds(p, cx, cy, foot, top + 2));
+        above.subtract(new Area(near));
+        g.clip(above);
+        chimney.draw(g);
+        g.setClip(clip);
         g.setColor(col(shade(roofC, 0.45)));
         g.setStroke(new BasicStroke(0.6f));
         g.draw(new Line2D.Double(sA, sB));
@@ -252,6 +261,12 @@ final class Art {
         g.draw(new Line2D.Double(nB, rB));
     }
     // --8<-- [end:gabled]
+
+    /** The outline of a box of 2 × 2 from {@code x}, {@code y}, between the heights {@code h0} and {@code h1}. */
+    private static Shape chimneyBounds(IsoProjection p, double x, double y, double h0, double h1) {
+        return poly(at(p, x, y, h1), at(p, x + 2, y, h1), at(p, x + 2, y, h0), at(p, x + 2, y + 2, h0),
+                at(p, x, y + 2, h0), at(p, x, y + 2, h1));
+    }
 
     static void window(Graphics2D g, double cx, double y, boolean shutters, double s) {
         double w = 3.2 * s, h = 3 * s;
@@ -765,15 +780,37 @@ final class Art {
 
     // ---- trees -----------------------------------------------------------------------------------
 
+    /** How high a broadleaf tree's crown sits, its middle, and its radius, for each unit of size. */
+    static final double CROWN = 12;
+    static final double CROWN_RADIUS = 4.8;
+    /** How high a conifer's tip is, and where its lowest branches start, for each unit of size. */
+    static final double CONE = 20.4;
+    static final double CONE_FOOT = 3.6;
+
+    /**
+     * A tree standing at {@code wx}, {@code wy}: the trunk from the ground into the crown, then the crown,
+     * a few round clumps of leaves or the tiers of a conifer. {@code s} scales it, 1 being a tall tree.
+     */
     static void tree(Graphics2D g, IsoProjection p, double wx, double wy, boolean conifer, double s, long seed) {
         Point2D foot = at(p, wx, wy, 0);
         double x = foot.getX(), y = foot.getY();
         Random rnd = new Random(seed);
-        g.setColor(new Color(0x4A3424));
-        g.fill(rect(x - 0.6 * s, y - 5 * s, 1.2 * s, 5 * s));
+        // The trunk: wider at the foot, lit on the left, with a dark ring where it meets the ground.
+        double trunkTop = conifer ? CONE_FOOT + 2 : CROWN - 2;
+        g.setColor(new Color(0, 0, 0, 70));
+        g.fill(new Ellipse2D.Double(x - 1.3 * s, y - 0.5 * s, 2.6 * s, 1 * s));
+        Path2D trunk = new Path2D.Double();
+        trunk.moveTo(x - 0.9 * s, y);
+        trunk.quadTo(x - 0.5 * s, y - 1.2 * s, x - 0.45 * s, y - trunkTop * s);
+        trunk.lineTo(x + 0.45 * s, y - trunkTop * s);
+        trunk.quadTo(x + 0.5 * s, y - 1.2 * s, x + 0.9 * s, y);
+        trunk.closePath();
+        g.setPaint(new GradientPaint((float) (x - s), 0, new Color(0x7A5A3E), (float) (x + s), 0, new Color(0x3A2618)));
+        g.fill(trunk);
         if (conifer) {
             for (int layer = 0; layer < 4; layer++) {
-                double base = y - 2.6 * s - layer * 3.6 * s, half = (5.5 - layer * 1.2) * s, tip = base - 6 * s;
+                double base = y - (CONE_FOOT + layer * 3.6) * s, half = (5.5 - layer * 1.2) * s;
+                double tip = layer == 3 ? y - CONE * s : base - 6 * s;
                 Path2D tier = new Path2D.Double();
                 tier.moveTo(x - half, base);
                 tier.quadTo(x, base + 1.4 * s, x + half, base);
@@ -784,23 +821,84 @@ final class Art {
             }
             return;
         }
-        double cy = y - 8 * s;
+        // Two branches fork from the trunk into the crown.
+        g.setColor(new Color(0x4A3424));
+        g.setStroke(new BasicStroke((float) (0.5 * s), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        g.draw(new Line2D.Double(x, y - (CROWN - 3.5) * s, x - 2 * s, y - (CROWN + 0.5) * s));
+        g.draw(new Line2D.Double(x, y - (CROWN - 3) * s, x + 2.2 * s, y - (CROWN + 1) * s));
+        double cy = y - CROWN * s;
         Color dark = new Color(0x1F4418), mid = rnd.nextBoolean() ? new Color(0x3C7A2A) : new Color(0x4E8A2E), lite = new Color(0x8CC05A);
         if (rnd.nextDouble() < 0.15) {
             mid = new Color(0x7A8A2A);
             lite = new Color(0xC8C060);
         }
         for (int i = 0; i < 5; i++) {
-            double a = rnd.nextDouble() * Math.PI * 2, d = (2.6 + rnd.nextDouble() * 2) * s, r = (3.8 + rnd.nextDouble() * 1.8) * s;
-            double bx = x + Math.cos(a) * d, by = cy + Math.sin(a) * d * 0.8;
+            double a = rnd.nextDouble() * Math.PI * 2, d = (2.4 + rnd.nextDouble() * 1.6) * s, r = (3.4 + rnd.nextDouble() * 1.4) * s;
+            double bx = x + Math.cos(a) * d, by = cy + Math.sin(a) * d * 0.6;
             g.setPaint(radial(new Point2D.Double(bx - r * 0.4, by - r * 0.45), r * 1.1, new float[]{0, 0.55f, 1},
                     new Color[]{lite, mid, dark}));
             g.fill(new Ellipse2D.Double(bx - r, by - r, r * 2, r * 2));
         }
-        double r = 4.8 * s;
+        double r = CROWN_RADIUS * s;
         g.setPaint(radial(new Point2D.Double(x - 2 * s, cy - 2.4 * s), r * 1.25, new float[]{0, 0.6f, 1},
                 new Color[]{lite, mid, dark}));
         g.fill(new Ellipse2D.Double(x - r, cy - r * 1.05, r * 2, r * 2));
+    }
+
+    /**
+     * The shadow of a tree on the ground, in world units, falling along +x like every shadow: the trunk's
+     * from the foot, then a round crown's, or a conifer's that narrows to the shadow of its tip.
+     */
+    static Shape treeShadow(double wx, double wy, boolean conifer, double s) {
+        Path2D path = new Path2D.Double(Path2D.WIND_NON_ZERO);
+        if (conifer) {
+            double wide = 3.4 * s, at = (CONE_FOOT + 1.4) * s * SHADOW;
+            path.moveTo(wx, wy - 0.4 * s);
+            path.quadTo(wx + at * 0.5, wy - wide, wx + at, wy - wide);
+            path.lineTo(wx + CONE * s * SHADOW, wy);
+            path.lineTo(wx + at, wy + wide);
+            path.quadTo(wx + at * 0.5, wy + wide, wx, wy + 0.4 * s);
+            path.closePath();
+            return path;
+        }
+        double cx = wx + CROWN * s * SHADOW, r = CROWN_RADIUS * 0.95 * s;
+        path.append(new Rectangle2D.Double(wx, wy - 0.65 * s, cx - wx, 1.3 * s), false);
+        path.append(new Ellipse2D.Double(cx - r * 1.25, wy - r, r * 2.5, r * 2), false);
+        return path;
+    }
+
+    // ---- people ----------------------------------------------------------------------------------
+
+    static final int[] SHIRTS = {0xC83A2E, 0x2E5A9A, 0xE8E4DC, 0xE8B030, 0x4A8A5A, 0x8A3A7A, 0x3A8A9A, 0xD87A4A};
+    static final int[] TROUSERS = {0x2A3A5A, 0x3A3A3E, 0x6A5A44, 0x2A3A5A, 0x4A4A50, 0x2A2A30, 0x5A4A3A, 0x3A4A6A};
+    static final int[] SKIN = {0xF0C8A0, 0xC89070, 0x8A5A3A, 0xE8B890};
+    static final int[] HAIR = {0x3A2A1A, 0x1A1A1A, 0x8A5A2A, 0xC8A060, 0x6A6A6A};
+
+    /**
+     * A person a little taller than a car, standing with the feet at {@code x}, {@code y}, in picture
+     * units: legs, a shirt, arms, a head with hair. {@code step} 0 to 3 swings the legs and arms.
+     */
+    static void person(Graphics2D g, double x, double y, int look, int step) {
+        int shirt = SHIRTS[look % SHIRTS.length], legs = TROUSERS[look % TROUSERS.length];
+        int skin = SKIN[look % SKIN.length], hair = HAIR[(look * 3 + 1) % HAIR.length];
+        double swing = new double[]{0.35, 0, -0.35, 0}[step];
+        g.setColor(new Color(0, 0, 0, 60));
+        g.fill(new Ellipse2D.Double(x - 0.9, y - 0.35, 1.8, 0.7));
+        g.setStroke(new BasicStroke(0.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        g.setColor(col(shade(legs, 0.8)));
+        g.draw(new Line2D.Double(x - 0.2, y - 1.8, x - 0.2 - swing, y - 0.2));
+        g.setColor(col(legs));
+        g.draw(new Line2D.Double(x + 0.2, y - 1.8, x + 0.2 + swing, y - 0.2));
+        g.setColor(col(shade(shirt, 0.75)));
+        g.draw(new Line2D.Double(x + 0.55, y - 3.4, x + 0.6 - swing * 0.8, y - 2.1));
+        g.setPaint(new GradientPaint((float) (x - 0.7), 0, col(shirt), (float) (x + 0.7), 0, col(shade(shirt, 0.72))));
+        g.fill(new RoundRectangle2D.Double(x - 0.65, y - 3.7, 1.3, 2.1, 0.6, 0.6));
+        g.setColor(col(shirt));
+        g.draw(new Line2D.Double(x - 0.55, y - 3.4, x - 0.6 + swing * 0.8, y - 2.1));
+        g.setColor(col(skin));
+        g.fill(new Ellipse2D.Double(x - 0.5, y - 4.75, 1, 1.05));
+        g.setColor(col(hair));
+        g.fill(new Arc2D.Double(x - 0.52, y - 4.8, 1.04, 0.9, 0, 180, Arc2D.CHORD));
     }
 
     // ---- vehicles --------------------------------------------------------------------------------

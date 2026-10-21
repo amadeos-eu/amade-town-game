@@ -55,7 +55,7 @@ public final class MakeArt {
         lot.translate(x, y);
         lot.scale(scale, scale);
         IsoProjection p = IsoProjection.at(Field.TILE, Field.TILE_WIDTH, Field.TILE_HEIGHT, 0, Lots.tall(zone, level));
-        Lots.draw(lot, p, zone, level, variant);
+        Lots.draw(lot, p, zone, level, variant, true);
         lot.dispose();
     }
 }

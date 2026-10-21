@@ -22,7 +22,6 @@ import java.awt.Composite;
 import java.awt.Graphics2D;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
@@ -78,6 +77,7 @@ final class TownPainter {
     private static final int CAR = 4;
     private static final int RUBBLE = 5;
     private static final int SIGN = 6;
+    private static final int WALKER = 7;
 
     private final Pictures pictures;
     private final DepthSort<Thing> sort = new DepthSort<>();
@@ -449,9 +449,7 @@ final class TownPainter {
                 } else if (game.ground(col, row) == Ground.FOREST && game.buildingAt(col, row) == null) {
                     for (int i = 0; i < trees(col, row); i++) {
                         double[] t = tree(col, row, i);
-                        double r = 7 * Pictures.TREE_SIZES[(int) t[2]];
-                        treeShadows.append(new Ellipse2D.Double(t[0] - r + 12 * Pictures.TREE_SIZES[(int) t[2]], t[1] - r * 0.8,
-                                r * 2, r * 1.6), false);
+                        treeShadows.append(Art.treeShadow(t[0], t[1], t[4] > 0, Pictures.TREE_SIZES[(int) t[2]]), false);
                     }
                 }
                 if (pylon(game, col, row)) shadow(col * Field.TILE, row * Field.TILE, new double[]{1.6, 1.6, 2.4, 2.4, Art.PYLON});
@@ -553,6 +551,12 @@ final class TownPainter {
             sort.add(x0, y0, x1, y1, px - Pictures.CAR_X, py - Pictures.CAR_Y, px + Pictures.CAR_X, py + 5,
                     new Thing(CAR, 0, 0, car.x(), car.y(), car));
         }
+        for (Walkers.Walker w : traffic.walkers()) {
+            double px = iso.pictureX(w.x(), w.y()), py = iso.pictureY(w.x(), w.y(), 0);
+            if (!view.sees(px - 3, py - 8, px + 3, py + 2)) continue;
+            sort.add(w.x() - 0.4, w.y() - 0.4, w.x() + 0.4, w.y() + 0.4, px - Pictures.PERSON_X, py - Pictures.PERSON_Y,
+                    px + Pictures.PERSON_X, py + 1, new Thing(WALKER, 0, 0, w.x(), w.y(), w));
+        }
         for (Thing thing : sort.sorted()) draw(g, game, iso, thing, time);
     }
     // --8<-- [end:things]
@@ -573,7 +577,8 @@ final class TownPainter {
                 double tall = Lots.tall(zone, level);
                 double x = tileX(iso, col, row);
                 double y = tileY(iso, col, row);
-                pictures.lot(zone, level, variant(col, row)).draw(g, x - Pictures.FLOOR_X, y - tall - Pictures.FLOOR_Y);
+                boolean street = game.road(col, row + 1) || game.highway(col, row + 1);
+                pictures.lot(zone, level, variant(col, row), street).draw(g, x - Pictures.FLOOR_X, y - tall - Pictures.FLOOR_Y);
                 if (game.burning(col, row)) {
                     int frame = (int) (time * 10 + col * 3 + row) % Pictures.FLAMES;
                     pictures.flames[frame].draw(g, x - Pictures.FLAME_X, y + 10 - Pictures.FLAME_Y);
@@ -596,6 +601,11 @@ final class TownPainter {
                 Traffic.Car car = (Traffic.Car) thing.what();
                 pictures.vehicle(car.kind(), car.facing()).draw(g, iso.pictureX(car.x(), car.y()) - Pictures.CAR_X,
                         iso.pictureY(car.x(), car.y(), 0) - Pictures.CAR_Y);
+            }
+            case WALKER -> {
+                Walkers.Walker w = (Walkers.Walker) thing.what();
+                pictures.people[w.look()][w.frame()].draw(g, iso.pictureX(w.x(), w.y()) - Pictures.PERSON_X,
+                        iso.pictureY(w.x(), w.y(), 0) - Pictures.PERSON_Y);
             }
             case BUILDING -> building(g, iso, (Building) thing.what(), time);
             default -> {

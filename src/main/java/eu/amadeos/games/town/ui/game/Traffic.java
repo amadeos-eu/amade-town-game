@@ -13,7 +13,7 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * The cars on the streets, and the fire trucks. The rules know nothing of them: the cars only show that the
+ * The cars on the streets, the fire trucks, and the people walking on the pavements ({@link Walkers}). The rules know nothing of them: the cars only show that the
  * town lives, more of them the more people it has, driving on the roads that lead to the highway, keeping
  * to the right and turning at random at the crossings. A fire truck drives from its station to the fire by
  * the shortest way along the roads and waits there until the fire is out.
@@ -85,17 +85,23 @@ final class Traffic {
     private final SeededRandom random = new SeededRandom(5);
     private final List<Car> cars = new ArrayList<>();
     private final List<Cell> streets = new ArrayList<>();
+    private final Walkers walkers = new Walkers();
     private Game game;
     private double recount;
 
     void clear() {
         cars.clear();
         streets.clear();
+        walkers.clear();
         game = null;
     }
 
     List<Car> cars() {
         return Collections.unmodifiableList(cars);
+    }
+
+    List<Walkers.Walker> walkers() {
+        return walkers.walkers();
     }
 
     // --8<-- [start:update]
@@ -121,6 +127,7 @@ final class Traffic {
             Car car = it.next();
             if (!drive(car, seconds)) it.remove();
         }
+        walkers.update(seconds, game);
     }
     // --8<-- [end:update]
 

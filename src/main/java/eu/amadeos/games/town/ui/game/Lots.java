@@ -94,23 +94,44 @@ final class Lots {
         return 24 + (variant % 3) * 4;
     }
 
-    /** Draws a look on the tile whose top corner is the projection's origin. */
-    static void draw(Graphics2D g, IsoProjection p, Zone zone, int level, int variant) {
+    /**
+     * Whether a look parks a car or a lorry at its front, which it does only where a street runs along the
+     * front: a car shut in behind a fence or between two houses could never drive away.
+     */
+    static boolean parks(Zone zone, int level, int variant) {
+        return switch (zone) {
+            case RESIDENTIAL -> level < 3 && variant == 1;
+            case COMMERCIAL -> level == 1;
+            case INDUSTRIAL -> level == 2;
+        };
+    }
+
+    /**
+     * Draws a look on the tile whose top corner is the projection's origin; {@code street} says whether a
+     * road runs along its front, the side towards +y.
+     */
+    static void draw(Graphics2D g, IsoProjection p, Zone zone, int level, int variant, boolean street) {
+        boolean parks = street && parks(zone, level, variant);
         switch (zone) {
-            case RESIDENTIAL -> home(g, p, level, variant);
-            case COMMERCIAL -> shop(g, p, level, variant);
-            case INDUSTRIAL -> works(g, p, level, variant);
+            case RESIDENTIAL -> home(g, p, level, variant, parks);
+            case COMMERCIAL -> shop(g, p, level, variant, parks);
+            case INDUSTRIAL -> works(g, p, level, variant, parks);
         }
     }
 
     // --8<-- [start:home]
-    private static void home(Graphics2D g, IsoProjection p, int level, int variant) {
+    private static void home(Graphics2D g, IsoProjection p, int level, int variant, boolean parks) {
         double dx = (variant % 3 - 1) * 0.6;
         boolean shutters = variant % 2 == 0;
         // The path from the door to the street, and a pool or a bed of flowers behind.
         Art.with(g, p.ground(0), f -> {
             f.setColor(new Color(0xC8C0AC));
             f.fill(Art.rect(7 + dx, 10, 2, 6));
+            if (parks) {
+                // The drive from the street to the car, through a gap in the fence.
+                f.setColor(new Color(0xA8A49C));
+                f.fill(Art.rect(11.6, 10.6, 3.6, 5.4));
+            }
             if (level == 1 && variant == 2) {
                 f.setColor(new Color(0xE8E4DA));
                 f.fill(new RoundRectangle2D.Double(12.2, 1.6, 2.8, 5.8, 1, 1));
@@ -131,9 +152,9 @@ final class Lots {
             Art.building(g, p, 2, 2, 14, 13, apartment(variant), wall(variant, 4), 0x86847E, Art.Style.APARTMENT,
                     40 + variant);
         }
-        // A hedge along the side, a car or a tree in the garden, the fence at the front.
+        // A hedge along the side, a car on the drive or a tree in the garden, the fence at the front.
         Art.box(g, p, 15.2, 1, 16, 15, 0, 2, 0x3E7A2E, 0x2E5E22, 0x24481A);
-        if (level < 3 && variant == 1) Art.car(g, p, 13.4, 12.6, 2, Art.CAR_COLOURS[(variant * 3 + level) % Art.CAR_COLOURS.length]);
+        if (parks) Art.car(g, p, 13.4, 13, 3, Art.CAR_COLOURS[(variant * 3 + level) % Art.CAR_COLOURS.length]);
         if (variant == 0 || variant == 3 || level == 3) {
             Art.tree(g, p, 3, 13, false, level == 3 ? 0.42 : 0.38, variant * 7L + level);
         }
@@ -142,15 +163,15 @@ final class Lots {
             Art.box(g, p, 9, 14.4, 15, 15.4, 0, 1.6, 0x3E7A2E, 0x2E5E22, 0x24481A);
         } else {
             Art.garden(g, p, 0.8, 6.4 + dx, 15.2, false);
-            Art.garden(g, p, 9.6 + dx, 15, 15.2, false);
+            Art.garden(g, p, 9.6 + dx, parks ? 11.4 : 15, 15.2, false);
         }
     }
     // --8<-- [end:home]
 
-    private static void shop(Graphics2D g, IsoProjection p, int level, int variant) {
+    private static void shop(Graphics2D g, IsoProjection p, int level, int variant, boolean parks) {
         if (level == 1) {
             Art.building(g, p, 2, 3, 14, 13, 9, wall(variant, 1), 0x9A968E, Art.Style.SHOP, 10 + variant);
-            Art.car(g, p, 6 + variant * 1.5, 14.6, variant % 2, Art.CAR_COLOURS[(variant * 5 + 1) % Art.CAR_COLOURS.length]);
+            if (parks) Art.car(g, p, 5.5 + variant * 1.5, 14.4, variant % 2, Art.CAR_COLOURS[(variant * 5 + 1) % Art.CAR_COLOURS.length]);
         } else if (level == 2) {
             Art.building(g, p, 1.5, 2, 14.5, 13, 16, wall(variant, 3), 0x8E8A82, Art.Style.SHOP, 20 + variant);
         } else if (variant % 2 == 0) {
@@ -165,7 +186,7 @@ final class Lots {
         }
     }
 
-    private static void works(Graphics2D g, IsoProjection p, int level, int variant) {
+    private static void works(Graphics2D g, IsoProjection p, int level, int variant, boolean parks) {
         int shed = variant % 2 == 0 ? 0xB8B4A8 : 0xA85A42;
         if (level == 1) {
             Art.building(g, p, 2, 3, 12, 13, 8, shed, 0x8A8A8A, Art.Style.FACTORY, 50 + variant);
@@ -174,7 +195,7 @@ final class Lots {
         } else if (level == 2) {
             Art.building(g, p, 1.5, 2, 12.5, 13, 11, 0xA85A42, 0x6A6A6A, Art.Style.FACTORY, 60 + variant);
             Art.stack(g, p, 14, 4, 1.4, 30, false);
-            Art.lorry(g, p, 14, 11.5, 2);
+            if (parks) Art.lorry(g, p, 14, 10.4, 2);
         } else {
             Art.building(g, p, 1, 1.5, 11.5, 14.5, 14, 0xB8B4A8, 0x8A8A8A, Art.Style.FACTORY, 70 + variant);
             Art.stack(g, p, 13.8, 3, 1.7, 40, true);

@@ -75,8 +75,8 @@ final class Pictures {
     final Sprite[] banks = new Sprite[8];
     /** The pavement at a corner of a crossing: (-x, -y), (+x, -y), (+x, +y), (-x, +y). */
     final Sprite[] corners = new Sprite[4];
-    /** By zone, level and variant. */
-    private final Sprite[][][] lots = new Sprite[Zone.values().length][4][Lots.VARIANTS];
+    /** By zone, level, variant and whether a street runs along the front (1) or not (0). */
+    private final Sprite[][][][] lots = new Sprite[Zone.values().length][4][Lots.VARIANTS][2];
     private final Lots.Look[][][] looks = new Lots.Look[Zone.values().length][4][Lots.VARIANTS];
     private final Map<Work, Sprite> structures = new EnumMap<>(Work.class);
     private final Map<Work, Sprite> yards = new EnumMap<>(Work.class);
@@ -86,6 +86,8 @@ final class Pictures {
     final Sprite[] pylons = new Sprite[2];
     /** By colour (then bus, lorry, fire truck) and direction. */
     private final Sprite[][] vehicles = new Sprite[Art.CAR_COLOURS.length + 3][4];
+    /** The people walking, by look and step. */
+    final Sprite[][] people = new Sprite[PEOPLE][STEPS];
     final Sprite[] flames = new Sprite[FLAMES];
     final Sprite[] puffs = new Sprite[PUFFS.length];
     final Sprite[] darkPuffs = new Sprite[PUFFS.length];
@@ -126,11 +128,16 @@ final class Pictures {
                     int variant = v;
                     double tall = Lots.tall(zone, level);
                     looks[zone.ordinal()][level][v] = Lots.look(zone, level, v);
-                    lots[zone.ordinal()][level][v] = Sprite.drawn(FLOOR_WIDTH, tall + FLOOR_HEIGHT, (g, w, h) -> {
-                        Art.smooth(g);
-                        Lots.draw(g, IsoProjection.at(Field.TILE, Field.TILE_WIDTH, Field.TILE_HEIGHT, FLOOR_X, tall + FLOOR_Y),
-                                zone, lv, variant);
-                    });
+                    for (int street = 0; street < 2; street++) {
+                        boolean front = street == 1;
+                        lots[zone.ordinal()][level][v][street] = front && !Lots.parks(zone, level, v)
+                                ? lots[zone.ordinal()][level][v][0]
+                                : Sprite.drawn(FLOOR_WIDTH, tall + FLOOR_HEIGHT, (g, w, h) -> {
+                                    Art.smooth(g);
+                                    Lots.draw(g, IsoProjection.at(Field.TILE, Field.TILE_WIDTH, Field.TILE_HEIGHT, FLOOR_X,
+                                            tall + FLOOR_Y), zone, lv, variant, front);
+                                });
+                    }
                 }
             }
             signs[zone.ordinal()] = Sprite.drawn(10, 12, (g, w, h) -> {
@@ -192,6 +199,16 @@ final class Pictures {
                 });
             }
         }
+        for (int look = 0; look < PEOPLE; look++) {
+            for (int step = 0; step < STEPS; step++) {
+                int l = look;
+                int st = step;
+                people[look][step] = Sprite.drawn(2 * PERSON_X, PERSON_Y + 1, (g, w, h) -> {
+                    Art.smooth(g);
+                    Art.person(g, PERSON_X, PERSON_Y, l, st);
+                });
+            }
+        }
         for (int i = 0; i < FLAMES; i++) {
             int frame = i;
             flames[i] = Sprite.drawn(FLAME_WIDTH, FLAME_HEIGHT, (g, w, h) -> {
@@ -224,6 +241,11 @@ final class Pictures {
     static final double TREE_HEIGHT = 28;
     static final double TREE_X = 14;
     static final double TREE_Y = 24;
+    static final int PEOPLE = Art.SHIRTS.length;
+    static final int STEPS = 4;
+    /** A walker's sprite, its feet at ({@link #PERSON_X}, {@link #PERSON_Y}). */
+    static final double PERSON_X = 3;
+    static final double PERSON_Y = 8;
     static final double PYLON_X = 8;
     static final double PYLON_Y = 21;
     static final double FLAME_WIDTH = 22;
@@ -250,8 +272,8 @@ final class Pictures {
         return roads[(mask & 15) + (highway ? 16 : 0)];
     }
 
-    Sprite lot(Zone zone, int level, int variant) {
-        return lots[zone.ordinal()][level][variant];
+    Sprite lot(Zone zone, int level, int variant, boolean street) {
+        return lots[zone.ordinal()][level][variant][street ? 1 : 0];
     }
 
     Lots.Look look(Zone zone, int level, int variant) {
