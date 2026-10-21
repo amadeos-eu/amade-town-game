@@ -373,8 +373,9 @@ public final class Game {
         events.add(new Event.Declined(col, row, lot[i]));
     }
 
-    /** The land value a zone needs to grow to a level: industry asks for less. */
+    /** The land value a zone needs to grow to a level: industry asks for less, offices a little less. */
     public static int needed(Zone zone, int level) {
+        if (zone == Zone.COMMERCIAL && level == 3) return Field.OFFICE_VALUE;
         int need = level == 3 ? Field.VALUE_3 : level == 2 ? Field.VALUE_2 : 0;
         return zone == Zone.INDUSTRIAL ? need / 2 : need;
     }
@@ -431,16 +432,18 @@ public final class Game {
     // --8<-- [start:demand]
     /**
      * Demand for each zone, from -1 to 1. People come for jobs; shops and industry come for people, and
-     * industry also sells out of town, so it starts the town. Taxes above the usual rate put everyone off,
-     * a happy town draws people.
+     * industry also sells out of town, so it starts the town. A grown town also wants offices, clean jobs
+     * in the shop zone, and so a little less industry. Taxes above the usual rate put everyone off, a
+     * happy town draws people.
      */
     private void weigh() {
         int jobs = shopJobs + workJobs;
         double workers = people * 0.3;
         double homes = (jobs + 16 - workers) / Math.max(24, people * 0.12);
-        double shopTarget = people * 0.12 + 4;
+        double offices = Math.max(0, people - Field.OFFICE_TOWN) * Field.OFFICE_JOBS;
+        double shopTarget = people * 0.12 + 4 + offices;
         double shops = (shopTarget - shopJobs) / Math.max(8, shopTarget * 0.5);
-        double workTarget = people * 0.17 + 10;
+        double workTarget = people * 0.17 + 10 - offices * 0.5;
         double works = (workTarget - workJobs) / Math.max(10, workTarget * 0.5);
         double taxes = (tax - Field.TAX) * 0.05;
         demandR = clamp(0.5 * demandR + 0.5 * (homes - taxes + (happiness - 50) / 150.0));

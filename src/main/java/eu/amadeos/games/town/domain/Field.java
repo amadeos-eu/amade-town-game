@@ -52,6 +52,11 @@ public final class Field {
     /** The land value a lot needs for level 2 and level 3. */
     public static final int VALUE_2 = 30;
     public static final int VALUE_3 = 55;
+    /** The land value an office block or a glass tower needs: shops at level 3. */
+    public static final int OFFICE_VALUE = 40;
+    /** From this many people on a town wants offices, and for each person more this many office jobs. */
+    public static final int OFFICE_TOWN = 300;
+    public static final double OFFICE_JOBS = 0.25;
     /** Pollution an industrial lot makes, by level, and how far it carries. */
     public static final int[] SMOKE = {0, 10, 18, 26};
     public static final int SMOKE_REACH = 5;

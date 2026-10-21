@@ -71,4 +71,12 @@ plan computer
   do zone r 30 36 33 39
   do line 29 35 29 37
   do build park 30 33
+  # More wind for the offices that a grown town wants.
+  do build wind 12 45
+  do build wind 13 45
+  do build wind 14 45
+  do build wind 9 46
+  do build wind 10 46
+  do build pump 47 24
+  do build coal 4 39
   do wait

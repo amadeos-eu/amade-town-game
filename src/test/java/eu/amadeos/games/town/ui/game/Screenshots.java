@@ -92,6 +92,12 @@ public final class Screenshots {
         shots.save(new File(dir, "budget.png"), false);
         play.show(Hud.Info.TOOL, TownPainter.Overlay.NONE);
 
+        // The same town four years on, played past its goal: offices have grown by the park and the clinic.
+        TownGame.PlayScene grown = shots.town(1, 7, 48);
+        shots.seconds(6);
+        shots.look(grown, 26, 31);
+        shots.save(new File(dir, "downtown.png"), false);
+
         // The first town again, this time with fires, as in the second mission.
         TownGame.PlayScene fire = shots.play(shots.withFires(), 5, 24);
         shots.until(fire, g -> burning(g) != null, 600);
