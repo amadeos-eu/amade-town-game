@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- AppStream metadata of amade-town-game, installed as /usr/share/metainfo/eu.amadeos.games.town.metainfo.xml.
+     amadeOS Software shows it for the installed package; a repository's appstream-generator reads it too. -->
+<component type="desktop-application">
+  <id>eu.amadeos.games.town</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>EUPL-1.2</project_license>
+
+  <name>amadeOS Town</name>
+
+  <summary>Lay roads, zone land, bring power and water, and watch a town grow</summary>
+  <summary xml:lang="de">Straßen bauen, Land ausweisen, Strom und Wasser bringen und eine Stadt wachsen sehen</summary>
+  <summary xml:lang="fr">Tracez des routes, zonez, amenez électricité et eau et regardez une ville grandir</summary>
+  <summary xml:lang="es">Trace calles, zonifique, lleve electricidad y agua y vea crecer una ciudad</summary>
+  <summary xml:lang="it">Traccia strade, crea zone, porta elettricità e acqua e guarda crescere una città</summary>
+
+  <description>
+    <p>The city builder of the amadeOS desktop, in an isometric view: lay roads from the highway, zone land for homes, shops and industry, and bring power and water. The town then grows by itself, lot by lot, where people want to live and work.</p>
+    <p xml:lang="de">Der Städtebau des amadeOS-Desktops, in isometrischer Ansicht: Bauen Sie Straßen von der Autobahn, weisen Sie Land für Wohnungen, Geschäfte und Industrie aus und bringen Sie Strom und Wasser. Die Stadt wächst dann von selbst, Grundstück für Grundstück, wo die Menschen wohnen und arbeiten wollen.</p>
+    <p xml:lang="fr">Le jeu de construction de ville du bureau amadeOS, en vue isométrique : tracez des routes depuis l'autoroute, zonez le terrain pour l'habitat, les commerces et l'industrie, et amenez électricité et eau. La ville grandit ensuite d'elle-même, parcelle par parcelle, là où les gens veulent vivre et travailler.</p>
+    <p xml:lang="es">El constructor de ciudades del escritorio amadeOS, en vista isométrica: trace calles desde la autopista, zonifique el terreno para viviendas, comercios e industria, y lleve electricidad y agua. La ciudad crece luego sola, parcela a parcela, donde la gente quiere vivir y trabajar.</p>
+    <p xml:lang="it">Il costruttore di città del desktop amadeOS, in vista isometrica: traccia strade dall'autostrada, suddividi il terreno in zone per case, negozi e industria e porta elettricità e acqua. La città poi cresce da sola, lotto dopo lotto, dove la gente vuole vivere e lavorare.</p>
+    <ul>
+      <li>Cars, buses and people in the streets</li>
+      <li xml:lang="de">Autos, Busse und Menschen auf den Straßen</li>
+      <li xml:lang="fr">Voitures, bus et passants dans les rues</li>
+      <li xml:lang="es">Coches, autobuses y gente en las calles</li>
+      <li xml:lang="it">Auto, autobus e persone per le strade</li>
+      <li>Overlays for power, water, land value and pollution</li>
+      <li xml:lang="de">Ansichten für Strom, Wasser, Bodenwert und Verschmutzung</li>
+      <li xml:lang="fr">Calques pour l'électricité, l'eau, la valeur du terrain et la pollution</li>
+      <li xml:lang="es">Capas de electricidad, agua, valor del suelo y contaminación</li>
+      <li xml:lang="it">Livelli per elettricità, acqua, valore del terreno e inquinamento</li>
+      <li>Budget with taxes and upkeep</li>
+      <li xml:lang="de">Haushalt mit Steuern und Unterhalt</li>
+      <li xml:lang="fr">Budget avec impôts et entretien</li>
+      <li xml:lang="es">Presupuesto con impuestos y mantenimiento</li>
+      <li xml:lang="it">Bilancio con tasse e manutenzione</li>
+      <li>Built on amade-game-engine; plays on other operating systems as well</li>
+      <li xml:lang="de">Gebaut auf amade-game-engine; läuft auch auf anderen Betriebssystemen</li>
+      <li xml:lang="fr">Construit sur amade-game-engine ; fonctionne aussi sur d'autres systèmes d'exploitation</li>
+      <li xml:lang="es">Hecho con amade-game-engine; funciona también en otros sistemas operativos</li>
+      <li xml:lang="it">Costruito su amade-game-engine; funziona anche su altri sistemi operativi</li>
+    </ul>
+  </description>
+
+  <launchable type="desktop-id">amade-town-game.desktop</launchable>
+  <icon type="stock">amade-town-game</icon>
+  <categories>
+    <category>Game</category>
+    <category>StrategyGame</category>
+    <category>Simulation</category>
+  </categories>
+
+  <url type="homepage">https://github.com/datazuul/amade-town-game</url>
+  <url type="bugtracker">https://github.com/datazuul/amade-town-game/issues</url>
+  <developer id="eu.amadeos">
+    <name>amadeOS Project</name>
+  </developer>
+
+  <screenshots>
+    <screenshot type="default">
+      <caption>The first homes along a new road</caption>
+      <caption xml:lang="de">Die ersten Häuser an einer neuen Straße</caption>
+      <caption xml:lang="fr">Les premières maisons le long d'une nouvelle route</caption>
+      <caption xml:lang="es">Las primeras casas junto a una calle nueva</caption>
+      <caption xml:lang="it">Le prime case lungo una strada nuova</caption>
+      <image>https://raw.githubusercontent.com/datazuul/amade-town-game/main/docs/screenshots/amade-town-game.png</image>
+    </screenshot>
+  </screenshots>
+
+  <provides>
+    <binary>amade-town-game</binary>
+  </provides>
+  <content_rating type="oars-1.1"/>
+</component>
