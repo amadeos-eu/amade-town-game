@@ -85,6 +85,9 @@ public final class TownGame implements Arena {
     private int chosen = 1;
     private long seed = System.nanoTime();
     private GameLoop loop;
+    private GameCanvas canvas;
+    /** The logical width of the screen: {@link Field#WIDTH}, or more on a wide screen. */
+    private double width = Field.WIDTH;
 
     @Inject
     public TownGame(Keyboard keyboard, Mouse mouse, Messages msg, Progress progress, SaveSlot slot, Mixer mixer) {
@@ -124,8 +127,26 @@ public final class TownGame implements Arena {
 
     /** Starts the loop; the canvas draws the scenes' worlds and then their overlays. */
     public void start(GameCanvas canvas) {
+        this.canvas = canvas;
+        canvas.setMaxLogicalWidth(Field.MAX_WIDTH);
         loop = new GameLoop(UPDATES_PER_SECOND, FRAMES_PER_SECOND, this::update, canvas::render);
         loop.start();
+    }
+
+    /** A new screen width: the map shows more or less, the panel moves to the right edge. */
+    void resize(double width) {
+        this.width = width;
+        hud.resize(width);
+    }
+
+    /** How much wider than {@link Field#WIDTH} the screen is: the panel sits that much further right. */
+    private double extra() {
+        return width - Field.WIDTH;
+    }
+
+    /** The width of the map's view on the screen, left of the panel. */
+    private double viewWidth() {
+        return Field.VIEW_WIDTH + extra();
     }
 
     public void stop() {
@@ -135,6 +156,7 @@ public final class TownGame implements Arena {
     void update(double seconds) {
         keyboard.poll();
         mouse.poll();
+        if (canvas != null) resize(canvas.logicalWidth());
         scenes.update(seconds);
     }
 
@@ -268,7 +290,7 @@ public final class TownGame implements Arena {
             demo.playOn();
             planner = new Planner(rules.plan());
             iso = TownPainter.projection(demo);
-            camera = new Camera(Field.WIDTH, Field.HEIGHT, iso.width(), iso.height());
+            camera = new Camera(width, Field.HEIGHT, iso.width(), iso.height());
             time = 0;
             traffic.clear();
         }
@@ -294,6 +316,7 @@ public final class TownGame implements Arena {
             traffic.update(seconds, demo);
             if (time > TITLE_SECONDS) restart();
             double[] middle = middle(iso, demo);
+            camera.resize(width, Field.HEIGHT);
             camera.jumpTo(middle[0] + Math.sin(time * 0.05) * 120, middle[1] + Math.sin(time * 0.037) * 60);
         }
 
@@ -362,7 +385,8 @@ public final class TownGame implements Arena {
             int open = Math.min(progress.open(), levels.size());
             if (controls.wasPressed(Action.LEFT)) chosen = Math.max(1, chosen - 1);
             if (controls.wasPressed(Action.RIGHT)) chosen = Math.min(open, chosen + 1);
-            int card = cardAt(mouse.x(), mouse.y());
+            // The cards and their maps are laid out for the narrowest screen and moved to the middle.
+            int card = cardAt(mouse.x() - extra() / 2, mouse.y());
             if (mouse.wasMoved() && card > 0 && card <= open) chosen = card;
             if (chosen != before) effects.tick();
             boolean clicked = mouse.wasPressed(MouseEvent.BUTTON1) && card > 0 && card <= open;
@@ -388,11 +412,14 @@ public final class TownGame implements Arena {
         public void renderOverlay(Graphics2D g, double alpha) {
             hud.veil(g);
             hud.text(g, msg.get("select.title"), 70, 30, true, Hud.AMBER);
+            AffineTransform screen = g.getTransform();
+            g.translate(extra() / 2, 0);
             for (int i = 0; i < levels.size(); i++) {
                 int number = i + 1;
                 hud.card(g, Hud.cardX(i, levels.size()), Hud.CARD_TOP, rules.mission(number), maps.get(number),
                         number <= progress.open(), number == chosen, progress);
             }
+            g.setTransform(screen);
             hud.text(g, msg.get("select.keys"), 330, 12, false, Hud.CHALK);
         }
 
@@ -468,6 +495,7 @@ public final class TownGame implements Arena {
                 return;
             }
             if (controls.wasPressed(Action.LOAD) && load()) return;
+            camera.resize(viewWidth() / zoom, Field.VIEW_HEIGHT / zoom);
             input(seconds);
             for (int i = 0; i < speed; i++) step(seconds);
             effects.update(seconds, game, iso, camera);
@@ -530,7 +558,9 @@ public final class TownGame implements Arena {
         private void input(double seconds) {
             double mx = mouse.x();
             double my = mouse.y();
-            boolean onMap = !Double.isNaN(mx) && mx < Field.VIEW_WIDTH && my >= Field.BAR;
+            boolean onMap = !Double.isNaN(mx) && mx < viewWidth() && my >= Field.BAR;
+            // The panel is laid out for the narrowest screen and moved to the right edge: so is the mouse.
+            double panelX = mx - extra();
             hover = null;
             if (onMap) {
                 double px = camera.worldX(mx / zoom);
@@ -548,7 +578,7 @@ public final class TownGame implements Arena {
             if (controls.wasPressed(Action.SLOWER)) faster(-1);
             if (controls.wasPressed(Action.COUNTS)) counts = !counts;
             if (controls.wasPressed(Action.OVERLAY)) nextOverlay();
-            if (controls.wasPressed(Action.ZOOM)) zoom(zoom == ZOOMS[0] ? 1 : -1, Field.VIEW_WIDTH / 2, Field.BAR + Field.VIEW_HEIGHT / 2);
+            if (controls.wasPressed(Action.ZOOM)) zoom(zoom == ZOOMS[0] ? 1 : -1, viewWidth() / 2, Field.BAR + Field.VIEW_HEIGHT / 2);
             if (onMap && mouse.wheel() != 0) zoom(-mouse.wheel(), mx, my);
             if (controls.wasPressed(Action.BUDGET)) info = info == Hud.Info.BUDGET ? Hud.Info.TOOL : Hud.Info.BUDGET;
             for (Tool t : Tool.values()) {
@@ -558,11 +588,11 @@ public final class TownGame implements Arena {
             placing();
             if (mouse.wasPressed(MouseEvent.BUTTON1)) {
                 if (onMap && hover != null) press(hover);
-                else if (!Double.isNaN(mx) && mx >= Field.VIEW_WIDTH) panelClick(mx, my);
+                else if (!Double.isNaN(mx) && panelX >= Field.VIEW_WIDTH) panelClick(panelX, my);
             }
             if (from != null && hover != null) to = hover;
             if (mouse.wasReleased(MouseEvent.BUTTON1) && from != null) release();
-            if (minimapDrag && mouse.isDown(MouseEvent.BUTTON1) && !Double.isNaN(mx)) jumpMinimap(mx, my);
+            if (minimapDrag && mouse.isDown(MouseEvent.BUTTON1) && !Double.isNaN(mx)) jumpMinimap(panelX, my);
             if (!mouse.isDown(MouseEvent.BUTTON1)) minimapDrag = false;
             if (mouse.wasPressed(MouseEvent.BUTTON3)) {
                 pressX = mx;
@@ -725,7 +755,7 @@ public final class TownGame implements Arena {
             double dy = controls.axis(Action.UP, Action.DOWN) * PAN_SPEED * seconds;
             if (mouse.isInside() && !dragging && !minimapDrag && from == null && !Double.isNaN(mx)) {
                 if (mx < EDGE) dx -= PAN_SPEED * seconds;
-                if (mx > Field.WIDTH - EDGE) dx += PAN_SPEED * seconds;
+                if (mx > width - EDGE) dx += PAN_SPEED * seconds;
                 if (my < EDGE) dy -= PAN_SPEED * seconds;
                 if (my > Field.HEIGHT - EDGE) dy += PAN_SPEED * seconds;
             }
@@ -755,12 +785,12 @@ public final class TownGame implements Arena {
             double py = camera.worldY(my / zoom);
             zoom = next;
             camera = view(iso, zoom);
-            camera.jumpTo(px - (mx - Field.VIEW_WIDTH / 2) / zoom, py - (my - Field.BAR - Field.VIEW_HEIGHT / 2) / zoom);
+            camera.jumpTo(px - (mx - viewWidth() / 2) / zoom, py - (my - Field.BAR - Field.VIEW_HEIGHT / 2) / zoom);
             effects.tick();
         }
 
-        private static Camera view(IsoProjection iso, int zoom) {
-            return new Camera(Field.VIEW_WIDTH / zoom, Field.VIEW_HEIGHT / zoom, iso.width(), iso.height())
+        private Camera view(IsoProjection iso, int zoom) {
+            return new Camera(viewWidth() / zoom, Field.VIEW_HEIGHT / zoom, iso.width(), iso.height())
                     .placedAt(0, Field.BAR / zoom);
         }
         // --8<-- [end:zoom]
@@ -817,7 +847,7 @@ public final class TownGame implements Arena {
             boolean line = tool == Tool.ROAD || tool == Tool.POWER;
             hud.bar(g, game, speed);
             hud.panel(g, game, minimap, camera, new Hud.View(tool, choice, info, hover, line ? 0 : drag[0], drag[1],
-                    drag[2], overlay, speed, mouse.x(), mouse.y()), alpha);
+                    drag[2], overlay, speed, mouse.x() - extra(), mouse.y()), alpha);
             if (from != null && drag[0] > 0 && !Double.isNaN(mouse.x())) {
                 String size = line ? msg.format("info.length", Game.path(from.col(), from.row(), to.col(), to.row()).size())
                         : msg.format("info.size", drag[0], drag[1]);
@@ -844,8 +874,8 @@ public final class TownGame implements Arena {
 
         /** For screenshots: the map at a zoom, centred where it was. */
         void zoomTo(int z) {
-            while (zoom < z) zoom(1, Field.VIEW_WIDTH / 2, Field.BAR + Field.VIEW_HEIGHT / 2);
-            while (zoom > z) zoom(-1, Field.VIEW_WIDTH / 2, Field.BAR + Field.VIEW_HEIGHT / 2);
+            while (zoom < z) zoom(1, viewWidth() / 2, Field.BAR + Field.VIEW_HEIGHT / 2);
+            while (zoom > z) zoom(-1, viewWidth() / 2, Field.BAR + Field.VIEW_HEIGHT / 2);
         }
 
         IsoProjection iso() {
@@ -957,7 +987,7 @@ public final class TownGame implements Arena {
         }
 
         int rowAt(double x, double y) {
-            if (Double.isNaN(x) || Math.abs(x - Field.WIDTH / 2) > 90) return -1;
+            if (Double.isNaN(x) || Math.abs(x - width / 2) > 90) return -1;
             int row = (int) Math.floor((y - PAUSE_TOP + PAUSE_ROW * 0.7) / PAUSE_ROW);
             return row >= 0 && row < Choice.values().length ? row : -1;
         }

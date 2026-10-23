@@ -12,6 +12,8 @@ public final class Field {
     public static final double PANEL = 128;
     public static final double BAR = 20;
     public static final double VIEW_WIDTH = WIDTH - PANEL;
+    /** How wide the screen may grow on a wide monitor: the map gets the extra width, the panel stays. */
+    public static final int MAX_WIDTH = 1024;
     public static final double VIEW_HEIGHT = HEIGHT - BAR;
 
     /** A tile is 16 world units a side, drawn as a diamond of 32 × 16; room above the map for tall buildings. */

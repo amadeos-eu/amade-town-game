@@ -19,6 +19,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.nio.file.Path;
 import java.util.Locale;
@@ -181,6 +182,35 @@ class TownGameTest {
         assertEquals(1, play.zoom());
     }
     // --8<-- [end:test-zoom]
+
+    // --8<-- [start:test-wide]
+    @Test
+    void aWideScreenShowsMoreMapAndMovesThePanelToTheRightEdge() {
+        game.resize(711);                       // 16:9: 711 × 400
+        TownGame.PlayScene play = game.play(1);
+        steps(2);
+        assertEquals((Field.VIEW_WIDTH + 71) / play.zoom(), play.camera().viewWidth(), 1e-9,
+                "the map gets the extra width");
+        Rectangle2D.Double road = Hud.tool(Tool.ROAD.ordinal());
+        mouse.moved(road.getCenterX() + 71, road.getCenterY());          // the panel is 71 units further right
+        steps(1);
+        press(MouseEvent.BUTTON1);
+        release(MouseEvent.BUTTON1);
+        assertEquals(Tool.ROAD, play.tool());
+        Cell start = meadow(play, 4);
+        over(play, start.col() + 1, start.row());   // zooming keeps the tile under the mouse in the wider view
+        Cell before = play.hover();
+        mouse.wheeled(1);
+        steps(2);
+        assertEquals(before, play.hover());
+        play.camera().jumpTo(0, 0);
+        mouse.moved(710, 200);                  // the real right edge of the screen moves the map
+        steps(1);
+        double x = play.camera().x();
+        steps(10);
+        assertTrue(play.camera().x() > x);
+    }
+    // --8<-- [end:test-wide]
 
     @Test
     void f5SavesTheTownAndF9LoadsItBack() {
