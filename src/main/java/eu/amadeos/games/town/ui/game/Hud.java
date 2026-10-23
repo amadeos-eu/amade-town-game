@@ -24,6 +24,7 @@ import java.awt.GradientPaint;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.Shape;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
@@ -98,10 +99,18 @@ final class Hud {
     /** What stays the same from frame to frame, drawn once: the bar, the panel, the faces of buttons. */
     private final Map<String, Sprite> faces = new HashMap<>();
     private final Sprite[] icons = new Sprite[Tool.values().length];
+    /** The logical width of the screen; the panel is drawn for {@link Field#WIDTH} and moved to the right edge. */
+    private double width = Field.WIDTH;
 
     Hud(Messages msg) {
         this.msg = msg;
         for (int i = 0; i < icons.length; i++) icons[i] = Pictures.icon(i);
+    }
+
+    void resize(double width) {
+        if (width == this.width) return;
+        this.width = width;
+        faces.keySet().removeIf(key -> key.startsWith("bar "));
     }
 
     // ---- the top bar -----------------------------------------------------------------------------
@@ -110,11 +119,12 @@ final class Hud {
     /** The bar along the top: money and the month's balance, people, power, water, happiness, the date, the speed. */
     void bar(Graphics2D g, Game game, int speed) {
         smooth(g);
-        face(g, "bar", 0, 0, Field.WIDTH, TOP, (sg, w, h) -> {
+        double barWidth = width;
+        face(g, "bar " + barWidth, 0, 0, barWidth, TOP, (sg, w, h) -> {
             sg.setPaint(new GradientPaint(0, 0, new Color(0x2E353E), 0, (float) TOP, new Color(0x1C2128)));
-            sg.fill(new Rectangle2D.Double(0, 0, Field.WIDTH, TOP));
+            sg.fill(new Rectangle2D.Double(0, 0, barWidth, TOP));
             sg.setColor(EDGE);
-            sg.fill(new Rectangle2D.Double(0, TOP - 1, Field.WIDTH, 1));
+            sg.fill(new Rectangle2D.Double(0, TOP - 1, barWidth, 1));
             double x = 8;
             for (double width : new double[]{116, 62, 70, 64, 46}) {
                 sg.setColor(BOX);
@@ -145,12 +155,12 @@ final class Hud {
         g.setColor(new Color(0xB8C8D8));
         g.setFont(font(9, true));
         String date = msg.format("bar.date", msg.get("month." + game.months() % 12), game.year());
-        g.drawString(date, (float) (Field.WIDTH - 40 - g.getFontMetrics().stringWidth(date)), 13.5f);
+        g.drawString(date, (float) (width - 40 - g.getFontMetrics().stringWidth(date)), 13.5f);
         g.setColor(BOX);
-        g.fill(new RoundRectangle2D.Double(Field.WIDTH - 32, 4.5, 24, 11, 4, 4));
+        g.fill(new RoundRectangle2D.Double(width - 32, 4.5, 24, 11, 4, 4));
         g.setFont(font(8, true));
         g.setColor(speed > 1 ? GREEN : LABEL);
-        centred(g, "x" + speed, Field.WIDTH - 20, 12.8);
+        centred(g, "x" + speed, width - 20, 12.8);
     }
     // --8<-- [end:bar]
 
@@ -176,6 +186,8 @@ final class Hud {
     /** The panel: the minimap, the tools, the demand, the box, the buttons. */
     void panel(Graphics2D g, Game game, DiamondMinimap minimap, Camera camera, View view, double alpha) {
         smooth(g);
+        AffineTransform before = g.getTransform();
+        g.translate(width - Field.WIDTH, 0);
         face(g, "panel", LEFT, TOP, Field.PANEL, Field.HEIGHT - TOP, (sg, w, h) -> {
             sg.setPaint(new GradientPaint((float) LEFT, 0, new Color(0x2E353E), (float) Field.WIDTH, 0, new Color(0x1C2128)));
             sg.fill(new Rectangle2D.Double(LEFT, TOP, Field.PANEL, Field.HEIGHT - TOP));
@@ -214,6 +226,7 @@ final class Hud {
         button(g, OVERLAY, overlay, view.overlay() != TownPainter.Overlay.NONE, view.over(OVERLAY));
         button(g, MISSION, msg.get("panel.mission"), view.info() == Info.MISSION, view.over(MISSION));
         button(g, MENU, msg.get("panel.menu"), false, view.over(MENU));
+        g.setTransform(before);
     }
     // --8<-- [end:panel]
 
@@ -562,19 +575,19 @@ final class Hud {
         g.setFont(font(8, true));
         String price = money(cost);
         FontMetrics fm = g.getFontMetrics();
-        double width = fm.stringWidth(size) + fm.stringWidth(price) + 16;
-        double lx = Math.min(x + 12, Field.VIEW_WIDTH - width - 4);
+        double labelWidth = fm.stringWidth(size) + fm.stringWidth(price) + 16;
+        double lx = Math.min(x + 12, width - Field.PANEL - labelWidth - 4);
         double ly = Math.min(y + 4, Field.HEIGHT - 30);
         g.setColor(new Color(0, 0, 0, 90));
-        g.fill(new RoundRectangle2D.Double(lx + 1, ly + 1, width, 13, 5, 5));
+        g.fill(new RoundRectangle2D.Double(lx + 1, ly + 1, labelWidth, 13, 5, 5));
         g.setColor(new Color(0x20262C));
-        g.fill(new RoundRectangle2D.Double(lx, ly, width, 13, 5, 5));
+        g.fill(new RoundRectangle2D.Double(lx, ly, labelWidth, 13, 5, 5));
         g.setColor(Art.col(colour));
         g.fill(new RoundRectangle2D.Double(lx, ly, 3, 13, 2, 2));
         g.setColor(new Color(0xF2F4F0));
         g.drawString(size, (float) lx + 6, (float) ly + 9.5f);
         g.setColor(affordable ? AMBER : RED);
-        g.drawString(price, (float) (lx + width - 5 - fm.stringWidth(price)), (float) ly + 9.5f);
+        g.drawString(price, (float) (lx + labelWidth - 5 - fm.stringWidth(price)), (float) ly + 9.5f);
     }
 
     /** The newest message at the bottom left of the map, with its badge, fading out in its last second. */
@@ -684,9 +697,9 @@ final class Hud {
             g.setFont(font(11, false));
             g.setColor(CHALK);
             String label = msg.get(rows[i]);
-            g.drawString(label, (float) (Field.WIDTH / 2 + 10 - g.getFontMetrics().stringWidth(label)), (float) y);
+            g.drawString(label, (float) (width / 2 + 10 - g.getFontMetrics().stringWidth(label)), (float) y);
             g.setFont(font(11, true));
-            g.drawString(values[i], (float) Field.WIDTH / 2 + 30, (float) y);
+            g.drawString(values[i], (float) (width / 2 + 30), (float) y);
         }
         text(g, msg.get(won ? (last ? "won.last" : "won.next") : "lost.again"), 300, 13, false, CHALK);
         if (won) text(g, msg.get("won.on"), 320, 11, false, LABEL);
@@ -709,13 +722,13 @@ final class Hud {
     /** Darkens the screen so text over it stays readable. */
     void veil(Graphics2D g) {
         g.setColor(VEIL);
-        rectangle.setRect(0, 0, Field.WIDTH, Field.HEIGHT);
+        rectangle.setRect(0, 0, width, Field.HEIGHT);
         g.fill(rectangle);
     }
 
     /** A line of text centred on the screen, its baseline at {@code y}, with a shadow. */
     void text(Graphics2D g, String line, double y, int size, boolean bold, Color colour) {
-        text(g, line, Field.WIDTH / 2, y, size, bold, colour);
+        text(g, line, width / 2, y, size, bold, colour);
     }
 
     void text(Graphics2D g, String line, double x, double y, int size, boolean bold, Color colour) {
