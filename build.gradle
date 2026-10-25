@@ -4,7 +4,11 @@ plugins {
 }
 
 group = 'eu.amadeos'
-version = '0.1.0'
+// CI computes the version from the Conventional Commits since the last release tag and passes it as
+// -PappVersion (datazuul/amadeos-ci scripts/next-version.sh); a build without it is a local development build.
+version = findProperty('appVersion') ?: '0.0.0-dev.0'
+// Debian sorts 1.1.0~dev.57 before 1.1.0 (with - it would sort after it).
+def debVersion = version.toString().replace('-', '~')
 
 java {
     toolchain {
@@ -26,7 +30,7 @@ dependencies {
     // snapshots and save files, the camera and the mouse, loop, canvas, particles, sound and music and the
     // standard game menu; brings amade-commons (theme, Motif look, start-up, XDG).
     // With ../amade-game-engine checked out, settings.gradle builds that checkout instead (composite build).
-    implementation 'com.github.datazuul:amade-game-engine:fcb3a6eddf'
+    implementation 'com.github.datazuul:amade-game-engine:v1.0.0'
     runtimeOnly 'ch.qos.logback:logback-classic:1.5.18'
     testImplementation platform('org.junit:junit-bom:5.10.2')
     testImplementation 'org.junit.jupiter:junit-jupiter'
@@ -109,7 +113,7 @@ exec /usr/bin/java -jar /opt/amade-town-game/amade-town-game.jar "\$@"
         }
 
         new File(debianDir, 'control').text = """Package: amade-town-game
-Version: ${project.version}
+Version: ${debVersion}
 Section: games
 Priority: optional
 Architecture: all
@@ -125,7 +129,7 @@ Description: City building game for amadeOS
  games.
 """
 
-        def debFile = new File(distDir, "amade-town-game_${project.version}_all.deb")
+        def debFile = new File(distDir, "amade-town-game_${debVersion}_all.deb")
         def process = new ProcessBuilder('dpkg-deb', '--root-owner-group', '--build',
                 stagingDir.absolutePath, debFile.absolutePath)
                 .redirectErrorStream(true)
@@ -146,7 +150,7 @@ tasks.register('installToAmadeOs') {
     doLast {
         def targetDir = file('../amadeos/config/packages.chroot')
         targetDir.mkdirs()
-        def debFile = new File(layout.buildDirectory.get().asFile, "distributions/amade-town-game_${project.version}_all.deb")
+        def debFile = new File(layout.buildDirectory.get().asFile, "distributions/amade-town-game_${debVersion}_all.deb")
         copy {
             from debFile
             into targetDir
