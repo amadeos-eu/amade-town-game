@@ -52,8 +52,8 @@
     <category>Simulation</category>
   </categories>
 
-  <url type="homepage">https://github.com/datazuul/amade-town-game</url>
-  <url type="bugtracker">https://github.com/datazuul/amade-town-game/issues</url>
+  <url type="homepage">https://github.com/amadeos-eu/amade-town-game</url>
+  <url type="bugtracker">https://github.com/amadeos-eu/amade-town-game/issues</url>
   <developer id="eu.amadeos">
     <name>amadeOS Project</name>
   </developer>
@@ -65,7 +65,7 @@
       <caption xml:lang="fr">Les premières maisons le long d'une nouvelle route</caption>
       <caption xml:lang="es">Las primeras casas junto a una calle nueva</caption>
       <caption xml:lang="it">Le prime case lungo una strada nuova</caption>
-      <image>https://raw.githubusercontent.com/datazuul/amade-town-game/main/docs/screenshots/amade-town-game.png</image>
+      <image>https://raw.githubusercontent.com/amadeos-eu/amade-town-game/main/docs/screenshots/amade-town-game.png</image>
     </screenshot>
   </screenshots>
 
