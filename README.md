@@ -5,6 +5,8 @@
 ![License](https://img.shields.io/badge/license-EUPL--1.2-blue)
 ![Java](https://img.shields.io/badge/Java-25-orange)
 
+![Town](docs/screenshots/amade-town-game.png)
+
 ## Playing
 
 - A click, **Space** or **Enter** leads from the title to the choice of a mission. Click one, or choose with **left** and **right** and play with **Space** or **Enter**. A mission opens when the one before it is won; the fastest win of each is kept.
